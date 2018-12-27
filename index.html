@@ -29,40 +29,94 @@
     <!-- pass in defaultprops of title, text and link -->
     <!-- do type checking and require-->
     <script type="text/babel">
-        var App = React.createClass({
-          getInitialState: function() {
-            return {
-              text: 'Hello World'
-            }
-          },
-
-          render: function() {
-            return (
-              <div>
-                <h1>{this.state.text}</h1>
-                <form>
-                  <input type="text" onChange={this.changeText} value={this.state.text}/>
-                  <button className="btn btn-primary">Click</button>
-                </form>
-                <br />
-                <ComponentTwo text={this.state.text}/>
-              </div>
-            )
-          },
-
-          changeText: function(e){
-            this.setState({text: e.target.value});
+      var App = React.createClass({
+        getInitialState: function(){
+          return{
+            text: '',
+            todos: [
+              {
+                id: 1,
+                text: 'Meeting At Work'
+              },
+              {
+                id: 2,
+                text: 'Bring kids to school'
+              },
+              {
+                id: 3,
+                text: 'Food Shopping'
+              },
+            ]
           }
-        });
-
-      var ComponentTwo = React.createClass({
-        render: function(){
+        },
+        render: function() {
           return (
             <div>
-              {this.props.text}
+              <TodoForm onTodoAdd={this.handleTodoAdd}/>
+            {/*Pass in todos*/}
+              <TodoList todos={this.state.todos}/>
             </div>
           )
+        },
+
+        //handleTodoAdd
+        handleTodoAdd: function(text) {
+          var newTodo = {
+            id: this.state.todos.length + 1,
+            text
+          }
+
+          this.setState({
+            todos: this.state.todos.concat(newTodo)
+          })
+        },
+      });
+
+      var TodoForm = React.createClass({
+        render: function() {
+          return (
+            <div>
+              {/*Make form*/}
+              <form onSubmit={this.onSubmit}>
+                <div className="form-group">
+                  <label>Text</label>
+                  <input type="text" onChange={this.onChange} ref="text" className="form-control" />
+                </div>
+              </form>
+            </div>
+          )
+        },
+        //log changing text
+        onChange: function(){
+          console.log('Changing text...');
+        },
+
+
+        //check for text and add on submit
+        onSubmit: function(e) {
+          e.preventDefault();
+
+          var text = this.refs.text.value.trim();
+          this.props.onTodoAdd(text);
+          this.refs.text.value = "";
         }
+
+
+      });
+
+      var TodoList = React.createClass({
+        render: function() {
+          return (
+          <ul className="list-group">
+        {/*Map through todos and display them individually*/}
+            {
+              this.props.todos.map(todo => {
+                return <li className="list-group-item" todo={todo} key={todo.id}>{todo.text}</li>
+              })
+            }
+          </ul>
+          )
+        },
       });
 
       ReactDOM.render(
