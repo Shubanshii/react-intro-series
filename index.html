@@ -8,7 +8,14 @@
     <script src="https://fb.me/react-0.14.3.js"></script>
     <script src="https://fb.me/react-dom-0.14.3.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
-
+    <style>
+      body{
+        margin-top: 30px;
+      }
+      a.delete{
+        color: red;
+      }
+    </style>
   </head>
   <body>
     <!-- Set up Bootstrap container -->
@@ -33,6 +40,7 @@
         getInitialState: function(){
           return{
             text: '',
+            //set key isEdit to 0 and pass in id of selected text
             todos: [
               {
                 id: 1,
@@ -52,53 +60,117 @@
         render: function() {
           return (
             <div>
-              <TodoForm onTodoAdd={this.handleTodoAdd}/>
+            {/*pass text, isEdit and todos as a props*/}
+            {/*handle update and handle change text*/}
+              <TodoForm onTodoAdd={this.handleTodoAdd}
+                {...this.state}
+                onTodoUpdate={this.handleTodoUpdate}
+                onChangeText={this.handleChangeText}
+              />
             {/*Pass in todos*/}
-              <TodoList todos={this.state.todos}/>
+            {/*pass text, isEdit and todos as a props*/}
+            {/*handle edit*/}
+              <TodoList onTodoDelete={this.handleTodoDelete}
+              {...this.state}
+              onTodoEdit={this.handleTodoEdit}
+              />
             </div>
           )
         },
 
-        //handleTodoAdd
         handleTodoAdd: function(text) {
           var newTodo = {
             id: this.state.todos.length + 1,
             text
           }
+          this.setState({todos: this.state.todos.concat(newTodo)})
+        },
+        // handleTodoDelete: function(todos) {
+        //   this.setState({
+        //     todos
+        //   })
+        // },
+        handleTodoDelete: function(todo) {
+          var todos = this.state.todos;
+          for (var i = 0; i < todos.length; i++) {
+            if(todos[i].id == todo.id){
+              todos.splice(i, 1);
+            }
+          }
+          this.setState({todos});
+        },
 
+        //handleTodoEdit puts the selected list item in the input field
+        handleTodoEdit: function(todo) {
           this.setState({
-            todos: this.state.todos.concat(newTodo)
+            isEdit: todo.id,
+            text: todo.text
           })
         },
+
+        /*as text is altered put the changes into the input value by updating text*/
+        handleChangeText: function(text) {
+          this.setState({
+            text
+          })
+        },
+
+        handleTodoUpdate: function(todo) {
+          var newTodosArray = this.state.todos
+          for(var i = 0; i<newTodosArray.length; i++) {
+            if(newTodosArray[i].id == todo.id) {
+              newTodosArray.splice(i, 1)
+            }
+          }
+          newTodosArray.push(todo);
+          this.setState({
+            todos: newTodosArray
+          })
+        }
       });
 
       var TodoForm = React.createClass({
         render: function() {
           return (
             <div>
-              {/*Make form*/}
               <form onSubmit={this.onSubmit}>
                 <div className="form-group">
-                  <label>Text</label>
-                  <input type="text" onChange={this.onChange} ref="text" className="form-control" />
+                  <label>Todo Form</label>
+                  {/*set value to text prop*/}
+                  <input type="text" ref="text" onChange={this.onChange} value={this.props.text} className="form-control"/>
                 </div>
               </form>
             </div>
           )
         },
-        //log changing text
         onChange: function(){
-          console.log('Changing text...');
-        },
-
-
-        //check for text and add on submit
-        onSubmit: function(e) {
-          e.preventDefault();
-
+          // grab the value from the input and pass it into changeText property
           var text = this.refs.text.value.trim();
-          this.props.onTodoAdd(text);
-          this.refs.text.value = "";
+
+          this.props.onChangeText(text);
+        },
+        onSubmit: function(e){
+          e.preventDefault();
+          var text = this.refs.text.value.trim();
+          if(!text) {
+            alert('Please enter a todo');
+            return;
+          }
+
+          // If isEdit isn't zero, make an object with the id set to isEdit and the text set to the input value
+          // and pass new object to onTodoUpdate.  If isEdit IS zero, pass the input value to onTodoAdd
+          if(this.props.isEdit) {
+            var todo = {
+              id: this.props.isEdit,
+              text
+            };
+            this.props.onTodoUpdate(todo);
+          } else {
+            this.props.onTodoAdd(text);
+          }
+
+        // clear input field
+        this.refs.text.value.trim();
         }
 
 
@@ -111,12 +183,45 @@
         {/*Map through todos and display them individually*/}
             {
               this.props.todos.map(todo => {
-                return <li className="list-group-item" todo={todo} key={todo.id}>{todo.text}</li>
+                return (<li className="list-group-item"  todo={todo} key={todo.id}>
+                  {/*make text clickable without encapsulating the delete, pass the todo
+                    to editTodo*/}
+                    <span onClick={this.editTodo.bind(this, todo)}>{todo.text}</span>
+                  {/*add delete link of character 'x'.  give it a class of delete and and an onClick event listener
+                  with the todo passed to it*/}
+                  <a onClick={this.onDelete.bind(this, todo)} href="#" className="delete">x</a></li>)
               })
             }
           </ul>
           )
         },
+        onDelete: function(todo) {
+          // console.log(todo.id);
+          // console.log(this.props.todos);
+          // var newTodosArray = this.props.todos.filter(item => {
+          //   return item.id !== todo.id
+          // });
+          this.props.onTodoDelete(todo);
+        },
+
+        // editTodo function accepts todo param.
+        // pass todo to editTodo prop
+        editTodo: function(todo) {
+          this.props.onTodoEdit(todo);
+        }
+
+
+          // var updatedText = prompt("Please enter your name:", "Harry Potter");
+          // for (var i = 0; i < this.props.todos.length; i++) {
+          //   // console.log(this.props.todos[i].id);
+          //   if(this.props.todos[i].id == todo.id) {
+          //     this.props.todos[i].text = updatedText
+          //   }
+          // }
+          //
+          // console.log(this.props.todos);
+          // pass todo to editTodo
+
       });
 
       ReactDOM.render(
